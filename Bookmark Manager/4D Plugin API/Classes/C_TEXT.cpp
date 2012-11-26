@@ -130,8 +130,10 @@ void C_TEXT::convertFromUTF8(const CUTF8String* fromString, CUTF16String* toStri
 #else
 	CFStringRef str = CFStringCreateWithBytes(kCFAllocatorDefault, fromString->c_str(), fromString->length(), kCFStringEncodingUTF8, true);
 	if(str){
-	
-		*toString = CUTF16String((const PA_Unichar *)CFStringGetCharactersPtr(str), CFStringGetLength(str));	
+		int len = CFStringGetLength(str)+1;
+		std::vector<uint8_t> buf(len * sizeof(PA_Unichar));
+		CFStringGetCharacters(str, CFRangeMake(0, len), (UniChar *)&buf[0]);
+		*toString = CUTF16String((const PA_Unichar *)&buf[0]);
 		CFRelease(str);
 	}
 #endif	
