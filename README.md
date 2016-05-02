@@ -13,12 +13,23 @@ c.f. [Locating Files Using Bookmarks](https://developer.apple.com/library/mac/do
 |:------:|:-----:|:---------:|:---------:|
 |🆗|🆗|🚫|🚫|
 
-Commands
----
+##Commands
 
 ```c
 // --- Bookmarks
 BOOKMARK Create
 BOOKMARK Resolve
 BOOKMARK Export_to_file
+```
+
+##Examples
+
+```
+$path:=Structure file
+
+$bookmark:=BOOKMARK Create ($path)
+$info:=BOOKMARK Resolve ($bookmark)
+
+$dest:=System folder(Desktop)+"test"
+$error:=BOOKMARK Export to file ($bookmark;$dest)
 ```
