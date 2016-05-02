@@ -19,7 +19,7 @@ c.f. [Locating Files Using Bookmarks](https://developer.apple.com/library/mac/do
 // --- Bookmarks
 BOOKMARK Create
 BOOKMARK Resolve
-BOOKMARK Export_to_file
+BOOKMARK Export to file
 ```
 
 ##Examples
