@@ -1,0 +1,1 @@
+﻿{"name":"Bookmark Manager","id":20000,"commands":[{"theme":"Bookmarks","syntax":"BOOKMARK Create(&T):O"},{"theme":"Bookmarks","syntax":"BOOKMARK Resolve(&O):T"},{"theme":"Bookmarks","syntax":"BOOKMARK Export to file(&O;&T):L"}]}

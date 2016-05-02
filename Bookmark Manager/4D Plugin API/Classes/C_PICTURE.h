@@ -17,6 +17,9 @@ class CBytes;
 extern "C" {
 #endif
 	
+    typedef std::basic_string<PA_Unichar> CUTF16String;
+    typedef std::basic_string<uint8_t> CUTF8String;	
+    
 	class CPicture
 	{
 		
@@ -51,11 +54,16 @@ extern "C" {
 		PA_Picture getPicture();
 		void setPicture(PA_Picture picture);
 		
-		void convertToGreyScale();	
-		
-		
-		
-		
+		PA_Picture createGrayScale();	
+        PA_Picture createCopy(const char* type);
+        
+#if VERSIONMAC
+#ifdef __OBJC__	
+        NSImage* copyImage();            
+        void setImage(NSImage *image);           
+#endif
+#endif		
+
 		void getSize(unsigned int *width, unsigned int *height);	
 		PA_Picture createThumbnail(unsigned int width, unsigned int height);
 		
@@ -87,11 +95,18 @@ extern "C" {
 		PA_Picture getPicture();
 		void setPicture(PA_Picture picture);
 
-		void convertToGreyScale();
+		PA_Picture createGrayScale();
+        PA_Picture createCopyPNG();
+        PA_Picture createCopyJPG();
+        PA_Picture createCopyTIF();     
 		
-		
-		
-		
+#if VERSIONMAC
+#ifdef __OBJC__	
+        NSImage* copyImage();        
+        void setImage(NSImage *image);        
+#endif
+#endif 		
+
 		void getSize(unsigned int *width, unsigned int *height);	
 		PA_Picture createThumbnail(unsigned int width, unsigned int height);
 		
