@@ -1,1 +1,5 @@
-﻿/* Localized versions of Info.plist keys */CFBundleName = "Bookmark Manager";CFBundleShortVersionString = "1.0";CFBundleGetInfoString = "Bookmark Manager version 1.0, Copyright 2016 miyako.";
+/* Localized versions of Info.plist keys */
+
+CFBundleName = "Bookmark Manager";
+CFBundleShortVersionString = "2.0";
+CFBundleGetInfoString = "Bookmark Manager version 2.0, Copyright 2019 miyako.";
