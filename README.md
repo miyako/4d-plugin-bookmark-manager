@@ -23,7 +23,7 @@ similar project [4d-plugin-alias-manager](https://github.com/miyako/4d-plugin-al
 
 ### Releases
 
-[2.0](https://github.com/miyako/4d-plugin-bookmark-manager/releases/tag/2.0)
+[2.1](https://github.com/miyako/4d-plugin-bookmark-manager/releases/tag/2.1)
 
 ### Examples
 
