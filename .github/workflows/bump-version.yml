@@ -35,7 +35,7 @@ permissions:
 
 env:
   # ---- edit these per-project ----
-  XCODE_PROJECT: Workspace Services.xcodeproj
+  XCODE_PROJECT: Bookmark Manager.xcodeproj
   INFO_PLIST: Info.plist
   # ---------------------------------
 

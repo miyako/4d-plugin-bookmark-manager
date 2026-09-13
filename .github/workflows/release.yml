@@ -23,9 +23,9 @@ permissions:
 
 env:
   # ---- edit these per-project, everything else is generic ----
-  PRODUCT_NAME: Workspace Services
-  XCODE_PROJECT: Workspace Services.xcodeproj
-  VCX_SOLUTION: Workspace Services.sln
+  PRODUCT_NAME: Bookmark Manager
+  XCODE_PROJECT: Bookmark Manager.xcodeproj
+  VCX_SOLUTION: Bookmark Manager.sln
   MACOS_DEPLOYMENT_TARGET: '11.0'
   # --------------------------------------------------------------
 
