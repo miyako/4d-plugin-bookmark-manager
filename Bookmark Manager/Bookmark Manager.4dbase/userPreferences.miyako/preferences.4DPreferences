@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?><preferences stamp="2">
+	<com.4d>
+		<database>
+			<data_storage data_path=":Bookmark Manager.4dd"/>
+		</database>
+	</com.4d>
+</preferences>
