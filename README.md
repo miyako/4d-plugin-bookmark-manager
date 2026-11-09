@@ -10,6 +10,67 @@ Command | Returns | Purpose
 
 **Platforms:** macOS (Carbon and Cocoa builds) only. There is no Windows implementation — bookmark data is a macOS/Foundation-specific mechanism with no Windows equivalent, so this isn't a partial port, it's the plugin's complete, intended scope.
 
+## Manual versioning and publication
+
+In Actions, select **Bump version**, explicitly select the source branch in
+**Run workflow**, and choose `patch`, `minor`, or `major`. It validates the
+immutable dispatch SHA, clean checkout, branch ref and coordinated source
+metadata, then commits only the source version files to that branch. It creates
+no tag and triggers no Build. Both remote checks and a mandatory executable
+pre-push guard require the advertised old branch SHA to equal the selected SHA;
+late advances, ancestor rewinds, deletions and same-result races fail closed.
+The push is nonforce and disables tag following even if `push.followTags=true`.
+Branch protection failures require operator action, not a bypass.
+
+Run **Build** separately on the intended branch/commit. It has no inputs, accepts
+no typed tag and never runs on a push or pull request. Every checkout uses the
+selected `github.sha`. Its source-derived strict `X.Y.Z` becomes `vX.Y.Z` only
+after the existing macOS universal (`arm64` + `x86_64`) build, architecture check,
+Developer ID signing/verification, ZIP and DMG notarization, and DMG stapling.
+The existing Xcode build phases and native dependencies are unchanged. Outputs
+remain `Bookmark Manager-X.Y.Z.zip` and `Bookmark Manager-X.Y.Z.dmg`; this is not
+a Windows build. Existing signing/notary secret names remain unchanged.
+
+`MARKETING_VERSION` is the authority across six target/project configurations.
+History introduced it and `CURRENT_PROJECT_VERSION` together at `2.2.0`
+(`dd6c1bb`); the old bump header promised both, but `34ce39c` and `e3250b2`
+advanced only marketing and the source plist. Thus current-project is a stale
+coordinated value, not an independent build counter. This migration aligns it
+and the stale English source overrides to the existing **2.2.2**, without a
+release increment. Future bumps validate and update all three source files:
+`Bookmark Manager.xcodeproj/project.pbxproj`, `Info.plist`, and
+`English.lproj/InfoPlist.strings`. Valid version-setting references are retained;
+the absent `CFBundleVersion` stays absent. Prebuilt bundle metadata, 4D data,
+manifest/schema versions and bundled 4D Plugin API dependencies are not inputs
+and are never rewritten.
+
+Builds share one repository-wide, cross-branch publication concurrency group.
+Before native work and again immediately after all gates, authenticated
+paginated release listing (including drafts) and remote tag checks must both
+succeed without a match. API 404, permission, network, malformed-response and
+later-page failures are errors, never evidence of absence. Publication uses
+create-only tag creation at the selected SHA and verifies the remote SHA.
+It then POSTs a new non-draft, non-prerelease release with the tag as its name,
+the exact SHA as `target_commitish`, and empty notes (no generated notes).
+Separate asset POSTs target only the newly returned release ID.
+
+**Partial publication and recovery:** creation/upload errors stop immediately.
+There is no delete, update, clobber, rollback or automatic retry; any created
+tag, release and accepted assets remain for inspection, even after an ambiguous
+API/network response. Do not rerun expecting an overwrite: existing tags or
+draft/published releases block it. Inspect the Actions log, exact remote tag
+SHA, release ID and accepted asset names manually. An operator must decide how
+to complete a verified partial release outside this create-only workflow, or
+use a separately reviewed source bump and a new Build for a new version.
+Never move an existing release tag to a different commit.
+
+Local lifecycle checks (no native build, credentials or publication required):
+
+```sh
+python3 -m unittest discover -s .github/tests -v
+actionlint
+```
+
 ---
 
 ## Requirements & platform notes
