@@ -1,22 +1,11 @@
-# Builds the plugin for Windows (x64) first, then macOS as a universal
-# (arm64 + x86_64) binary, merges both into the single cross-platform
-# .bundle, codesigns + notarizes the mac binary, and publishes a GitHub
-# Release with the zip and dmg attached.
-#
-# Trigger: push a tag matching v*.*.* (either by hand, or via bump-version.yml).
-# You can also run it manually against an existing tag with workflow_dispatch.
+# Builds the macOS universal plugin, signs, notarizes and staples it,
+# then creates a new source-version tag and release with ZIP/DMG assets.
+# Manual only: every checkout uses the immutable selected github.sha.
 
-name: Build & Release
+name: Build
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
   workflow_dispatch:
-    inputs:
-      tag:
-        description: Existing tag to build (e.g. v2.3.0)
-        required: true
 
 permissions:
   contents: write
@@ -25,12 +14,11 @@ env:
   # ---- edit these per-project, everything else is generic ----
   PRODUCT_NAME: Bookmark Manager
   XCODE_PROJECT: Bookmark Manager.xcodeproj
-  VCX_SOLUTION: Bookmark Manager.sln
   MACOS_DEPLOYMENT_TARGET: '11.0'
   # --------------------------------------------------------------
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-publication
   cancel-in-progress: false
 
 jobs:
@@ -41,11 +29,20 @@ jobs:
       tag: ${{ steps.set.outputs.tag }}
       version: ${{ steps.set.outputs.version }}
     steps:
-      - id: set
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: validate source and check tag and all releases
+        id: set
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SELECTED_SHA: ${{ github.sha }}
+          REF_TYPE: ${{ github.ref_type }}
         run: |
-          TAG="${{ inputs.tag || github.ref_name }}"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          test "$REF_TYPE" = branch
+          python3 .github/scripts/release.py preflight --sha "$SELECTED_SHA"
 
   build-macos:
     name: Build macOS, package, sign, notarize & release
@@ -54,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.version.outputs.tag }}
+          ref: ${{ github.sha }}
 
       - name: import Developer ID certificate
         env:
@@ -125,7 +122,7 @@ jobs:
           ZIP_PATH="${{ env.PRODUCT_NAME }}-${VERSION}.zip"
           DMG_PATH="${{ env.PRODUCT_NAME }}-${VERSION}.dmg"
 
-          # zip: cross-platform bundle (win + mac binaries together), what most users grab
+          # ZIP contains the macOS universal bundle.
           ditto -c -k --keepParent "$BUNDLE_PATH" "$ZIP_PATH"
 
           # dmg: mac-friendly, and the only format Apple lets us staple a ticket to
@@ -138,11 +135,10 @@ jobs:
           echo "ZIP_PATH=$ZIP_PATH" >> "$GITHUB_ENV"
           echo "DMG_PATH=$DMG_PATH" >> "$GITHUB_ENV"
 
-      - name: create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.version.outputs.tag }}
-          name: ${{ needs.version.outputs.tag }}
-          files: |
-            ${{ env.ZIP_PATH }}
-            ${{ env.DMG_PATH }}
+      - name: recheck availability and create tag, release and assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SELECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/release.py publish --sha "$SELECTED_SHA" "$ZIP_PATH" "$DMG_PATH"
