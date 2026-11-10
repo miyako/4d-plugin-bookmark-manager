@@ -71,6 +71,77 @@ python3 -m unittest discover -s .github/tests -v
 actionlint
 ```
 
+## Native ownership regression
+
+The compiled, currently command-dormant `CPicture` helper uses owning string
+and picture arguments for synchronous 4D commands. A path string is released
+only by its argument, the picture output is cleared after the wrapper retains
+it, and `setBytes` releases its temporary creation reference after retention.
+Arguments immediately assigned a string or picture start Undefined rather
+than allocating an empty owner that would be overwritten. Charset conversion
+returns **bytes**, which are divided by `sizeof(PA_Unichar)` before building
+a UTF-16 string. Returned picture handoffs remain owned by their callers.
+
+On macOS with Xcode command-line tools, run:
+
+```sh
+python3 .github/tests/run_native_ownership.py --baseline
+python3 .github/tests/run_native_ownership.py
+```
+
+Both use the same test harness, actual dispatcher, all 16 class implementations,
+and the **complete unchanged bundled SDK**. The baseline command extracts only
+native sources at immutable `ec7ef9b405e4d2e9de06701e0bff18816ca9e76b`
+into a temporary directory, and requires six named failures: path
+double-disposal, temporary-picture/empty-argument leaks, and `createCopy`'s
+ASan heap-buffer-overread. The fixed command requires 88 passing combinations:
+11 cases across allocated/null empty representations, command success/no-op
+failure, and in-place/replaced pictures. ASan/UBSan stay enabled; macOS LSan
+is not used, so each process explicitly requires zero live tracked strings,
+handles and picture references.
+
+The synthetic engine-boundary shim preserves byte capacities, UTF-16 unit
+counts, terminator boundaries and reference ownership. Fixtures cover exact
+ASCII, BMP, supplementary and empty text; independent array/callback owners;
+borrowed copies surviving replacement/clear; accepted transfers, replacement,
+growth/shrink and rejection by type/data/index/null descriptor; and picture
+handoffs surviving wrapper destruction. The unsigned **Native ownership** CI
+job runs these checks and the lifecycle suite only. It never invokes an Xcode
+target, signing, notarization, packaging or publication. Both existing release
+workflows remain manual-only and unchanged.
+
+Audit scope includes `4DPlugin.cpp/.h`, both manifests (three matching scalar
+commands, dispatcher cases 1-3), the prefix header, every `Classes/*.cpp/.h`,
+and both projects' compile/include surfaces. Both projects compile all class
+implementations plus `4DPluginAPI.c`; the API header includes the wrappers.
+`C_TEXT` copies borrowed inputs into C++ storage and uses the content setter
+for outputs; `ARRAY_TEXT` makes a separate allocation per accepted array
+transfer. No exported text-array command, JSON Parse/ExecuteCommand helper,
+object/collection getter API or additional native/third-party implementation
+is present. Scalar, BLOB, pointer and other array wrappers were included in
+the inventory, not excluded because the manifest has no arrays.
+
+SDK provenance is the repository's bundled file, last changed at
+`dd6c1bb48a4f7e8e7b4aff0314db154a7a96fd50`, SHA-256
+`355ee208ad6c61dcc68e8432546fc42484888211dd07ed8fa3fdb4440f3edbd8`
+(`4DPluginAPI.c`). Its v14 source/v13 header comments are not verified upstream
+release identities. The audit follows the canonical native ownership skill
+at `miyako/skills` revision `e6b492fcb81e5e1a7f7db723594b420e63bf6eb9`
+(merged guidance from PRs 69 and 71).
+
+**Limits and deferred evidence:** the shim is not execution in 4D or Windows
+and does not certify bookmark behavior or the originating Poppler crash.
+`C_POINTER::getVariable` interprets a `PA_GetPointerValue` result as reference
+metadata despite a header cleanup comment; its ownership is ambiguous and was
+not changed. Successful SDK picture-data/application-path output ownership is
+also not established by the bundled forwarding code; the shim models no
+picture representations, checks the error before consuming a returned value,
+and deliberately does not infer a disposal rule. SDK array resize allocation
+failure can corrupt the reported count independently of these changes:
+normal resize tests do not certify OOM behavior, and no SDK rewrite is included.
+The five picture commands are procedures; their ignored result is modeled as
+Undefined, not as evidence about owning results from arbitrary other commands.
+
 ---
 
 ## Requirements & platform notes
