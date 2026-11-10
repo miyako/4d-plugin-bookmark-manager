@@ -1,0 +1,23 @@
+name: Native ownership
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  ownership:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reproduce immutable baseline defects
+        run: python3 .github/tests/run_native_ownership.py --baseline
+      - name: Check fixed native sources
+        run: python3 .github/tests/run_native_ownership.py
+      - name: Preserve manual release lifecycle
+        run: python3 -m unittest discover -s .github/tests -v
